@@ -96,6 +96,8 @@ select dt_report,
          from merged_trades)
 
 , f2 as (
+-- TOFIX: This part is probably not implementing correctly, 
+-- it is really hard to interpret the granularity of desired aggregation from the description along.
 -- rank_volume_symbol_prev_7d
 -- rank_count_prev_7d
     SELECT

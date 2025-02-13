@@ -37,15 +37,15 @@ Task: You are requested to create a query that satisfies the below requirements.
 
 Return a row for every combination of dt_report/login/server/symbol/currency every day in June, July, August and September 2020.
 
-Your method should work even if there is no data on a particular day in this period within the data, and you can report based on close_time.
+- Your method should work even if there is no data on a particular day in this period within the data, and you can report based on close_time.
 
-Please run this query on users that exist in the user's table only.
+- Please run this query on users that exist in the user's table only.
 
-Please include enabled accounts only.
+- Please include enabled accounts only.
 
-Please return the data in order of row_number in descending.
+- Please return the data in order of row_number in descending.
 
-Please fix any quality control issues you identify in the first requirements within this query.
+- Please fix any quality control issues you identify in the first requirements within this query.
 
 
 
