@@ -3,7 +3,7 @@
 
 ## Pre-requisites
 
-- uv: for lib management and python environment creation
+- uv: for lib management and python environment creation (https://docs.astral.sh/uv/getting-started/installation/)
 - Python 3.12
 
 ## Task 1: Data quality check
