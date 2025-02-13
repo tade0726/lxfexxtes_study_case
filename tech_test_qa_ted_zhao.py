@@ -18,15 +18,9 @@ possible.
 
 from sqlalchemy import (
     create_engine,
-    Column,
-    String,
-    Integer,
-    Float,
-    TIMESTAMP,
-    ForeignKey,
     text,
 )
-from sqlalchemy.orm import relationship, sessionmaker, declarative_base
+from sqlalchemy.orm import sessionmaker, declarative_base
 
 import pandas as pd
 
@@ -56,102 +50,33 @@ Session = sessionmaker(bind=engine)
 Base = declarative_base()
 
 
-class User(Base):
-    __tablename__ = "users"
-
-    login_hash = Column(String, primary_key=True)
-    server_hash = Column(String)
-    country_hash = Column(String)
-    currency = Column(String)
-    enable = Column(Integer)
-
-    # Relationship with trades
-    trades = relationship("Trade", back_populates="user")
-
-    def __repr__(self):
-        return f"<User(login_hash='{self.login_hash}', currency='{self.currency}')>"
-
-
-class Trade(Base):
-    __tablename__ = "trades"
-
-    login_hash = Column(String, ForeignKey("users.login_hash"))
-    ticket_hash = Column(String, primary_key=True)
-    server_hash = Column(String)
-    symbol = Column(String)
-    digits = Column(Integer)
-    cmd = Column(Integer)
-    volume = Column(Integer)
-    open_time = Column(TIMESTAMP)
-    open_price = Column(Float)
-    close_time = Column(TIMESTAMP)
-    contractsize = Column(Float)
-
-    # Relationship with user
-    user = relationship("User", back_populates="trades")
-
-    def __repr__(self):
-        return f"<Trade(ticket_hash='{self.ticket_hash}', symbol='{self.symbol}')>"
-
-
-def read_users(limit=None):
-    """Read users from the database"""
-    session = Session()
-    try:
-        query = session.query(User)
-        if limit:
-            query = query.limit(limit)
-        return query.all()
-    finally:
-        session.close()
-
-
-def read_trades(limit=None):
-    """Read trades from the database"""
-    session = Session()
-    try:
-        query = session.query(Trade)
-        if limit:
-            query = query.limit(limit)
-        return query.all()
-    finally:
-        session.close()
-
-
-def get_user_trades(login_hash):
-    """Get all trades for a specific user"""
-    session = Session()
-    try:
-        user = session.query(User).filter(User.login_hash == login_hash).first()
-        if user:
-            return user.trades
-        return []
-    finally:
-        session.close()
-
-
 def checking_users_tables():
 
     checkers = {}
 
     with engine.connect() as conn:
-        # checking login_hash key is unique
 
-        user_counts = conn.execute(text("SELECT COUNT(*) FROM users;")).fetchall()
-        unique_user_count = conn.execute(
-            text("SELECT COUNT(DISTINCT login_hash) FROM users;")
-        ).fetchall()
+        # vertify combination of login_hash and server_hash is unique
+        # YES, 666 is the total numbers of unique combinations and unique records
 
-        if user_counts[0][0] != unique_user_count[0][0]:
-            checkers["primary_key_unique"] = (
+        SQL_TEXT = """
+        select count(*) from (select distinct * from users) as t1
+        UNION ALL
+        select count(*) from (select distinct login_hash, server_hash from users) as t2;
+        """
+
+        counts = conn.execute(text(SQL_TEXT)).fetchall()
+
+        if counts[0][0] != counts[1][0]:
+            checkers["unique_combinations"] = (
                 False,
                 {
-                    "user_counts": user_counts[0][0],
-                    "unique_user_count": unique_user_count[0][0],
+                    "unique_combinations": counts[0][0],
+                    "unique_records": counts[1][0],
                 },
             )
         else:
-            checkers["primary_key_unique"] = (True, {})
+            checkers["unique_combinations"] = (True, {})
 
         # checking server_hash, how many unique users per server
         server_hash_counts = conn.execute(
@@ -301,27 +226,16 @@ def checking_trades_tables():
 
     with engine.connect() as conn:
 
-        # checking primary key uniqueness, `ticket_hash`
+        # checking the combination of `login_hash` and `server_hash` and `ticket_hash` is unique
 
-        unique_counts = conn.execute(
-            text(
-                """
-                SELECT COUNT(DISTINCT ticket_hash)
-                FROM trades;
-            """
-            )
-        ).fetchall()[0]
+        SQL = """
+        select count(*) from (select distinct ticket_hash, login_hash, server_hash from trades) t1
+        UNION ALL
+        select count(*) from (select distinct * from trades) t2;
+        """
 
-        counts = conn.execute(
-            text(
-                """
-                SELECT COUNT(*)
-                FROM trades;
-            """
-            )
-        ).fetchone()[0]
-
-        checkers["primary_key_uniqueness"] = counts == unique_counts
+        counts = conn.execute(text(SQL)).fetchall()
+        checkers["login_hash_server_hash_ticket_hash_unique"] = counts[0][0] == counts[1][0]
 
         if False:
             # show unique values of `symbol` column
@@ -430,6 +344,27 @@ def checking_trades_tables():
         checkers["open_time_close_time_reversed_counts"] = (
             open_time > close_time
         ).sum()
+
+        # checking duration between `open_time` and `close_time`
+
+        duration = conn.execute(
+            text(
+                """
+                WITH c1 AS (
+                    SELECT 
+                        trades.open_time,
+                        trades.close_time,
+                        (trades.close_time - trades.open_time) AS duration 
+                    FROM trades
+                )
+                SELECT *
+                FROM c1
+                WHERE duration > '720 day'
+                """
+            )
+        ).fetchall()
+
+        checkers["over_720_days_duration_trades_counts"] = len(duration)
 
         # checking `price` and `contractsize` for distribution
 
@@ -549,18 +484,6 @@ def check_outliers(series: pd.Series, decimals: int = 3, outliers: bool = True) 
 
 
 if __name__ == "__main__":
-
-    if False:
-        # Example usage: Read sample data
-        print("Reading first 5 users:")
-        users = read_users(limit=5)
-        for user in users:
-            print(user)
-
-        print("\nReading first 5 trades:")
-        trades = read_trades(limit=5)
-        for trade in trades:
-            print(trade)
 
     print("\nChecking users table:")
     user_table_checker = checking_users_tables()

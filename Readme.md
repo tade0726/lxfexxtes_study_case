@@ -35,6 +35,17 @@ Output: tech_test_query_{your_name}.sql
 
 Task: You are requested to create a query that satisfies the below requirements.
 
+Return a row for every combination of dt_report/login/server/symbol/currency every day in June, July, August and September 2020.
+
+Your method should work even if there is no data on a particular day in this period within the data, and you can report based on close_time.
+
+Please run this query on users that exist in the user's table only.
+
+Please include enabled accounts only.
+
+Please return the data in order of row_number in descending.
+
+Please fix any quality control issues you identify in the first requirements within this query.
 
 
 
@@ -56,29 +67,29 @@ Task: You are requested to create a query that satisfies the below requirements.
 
 ### Users Table
 
-| Column        | Type    | Description |
-|--------------|---------|-------------|
-| login_hash   | text    | Unique user identifier hash |
-| server_hash  | text    | Server hash identifier |
-| country_hash | text    | Hash of the user's country |
-| currency     | text    | Account currency denomination |
-| enable       | bigint  | Account status flag |
+| Column | Type | Description |
+|--------|------|-------------|
+| login_hash | TEXT | hashed user login ID |
+| server_hash | TEXT | hashed machine ID (note that logins and tickets belong to servers) |
+| country_hash | TEXT | hash of the country of the user |
+| currency | TEXT | denomination of the account currency |
+| enable | BOOLEAN | if the login account is enabled or not |
 
 ### Trades Table
 
-| Column       | Type             | Description |
-|-------------|------------------|-------------|
-| login_hash  | text            | Reference to user's login hash |
-| ticket_hash | text            | Unique trade identifier hash |
-| server_hash | text            | Server hash identifier |
-| symbol      | text            | Trading symbol/instrument |
-| digits      | bigint          | Decimal precision for the instrument |
-| cmd         | bigint          | Trade command/type |
-| volume      | bigint          | Trade volume |
-| open_time   | timestamp       | Trade opening time |
-| open_price  | double precision| Opening price |
-| close_time  | timestamp       | Trade closing time |
-| contractsize| double precision| Contract size for the trade |
+| Column | Type | Description |
+|--------|------|-------------|
+| ticket_hash | TEXT | hashed trade ID |
+| login_hash | TEXT | hashed user login ID |
+| server_hash | TEXT | hashed machine ID (note that logins and tickets belong to servers) |
+| symbol | TEXT | financial instrument being traded |
+| digits | INTEGER | number of significant digits after the decimal place |
+| cmd | INTEGER | 0 = buy, 1 = sell |
+| volume | FLOAT | size of the trade |
+| open_time | TIMESTAMP | open time of the trade |
+| open_price | FLOAT | opening price of the trade |
+| close_time | TIMESTAMP | close time of the trade (epoch means trade still open) |
+| contractsize | FLOAT | size of a single contract of the financial instrument |
 
 ## Indexes
 
