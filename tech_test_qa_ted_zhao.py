@@ -235,7 +235,9 @@ def checking_trades_tables():
         """
 
         counts = conn.execute(text(SQL)).fetchall()
-        checkers["login_hash_server_hash_ticket_hash_unique"] = counts[0][0] == counts[1][0]
+        checkers["login_hash_server_hash_ticket_hash_unique"] = (
+            counts[0][0] == counts[1][0]
+        )
 
         if False:
             # show unique values of `symbol` column
@@ -485,14 +487,18 @@ def check_outliers(series: pd.Series, decimals: int = 3, outliers: bool = True) 
 
 if __name__ == "__main__":
 
-    print("\nChecking users table:")
+    print("\nChecking users table: \n")
     user_table_checker = checking_users_tables()
     pprint(user_table_checker)
 
-    print("\nChecking trades table:")
+    print("=" * 80)
+
+    print("\nChecking trades table: \n")
     trades_table_checker = checking_trades_tables()
     pprint(trades_table_checker)
 
-    print("\nChecking data integrity:")
+    print("=" * 80)
+
+    print("\nChecking data integrity: \n")
     data_integrity_checkers = checking_data_integrity()
     pprint(data_integrity_checkers)
